@@ -1,20 +1,54 @@
 # Dokumentasi REST API — CodeIgniter 4 + Shield
 
-Dokumentasi endpoint, request, dan response untuk API manajemen user, autentikasi token, HMAC, ban, force reset, grup, dan permission.
+Dokumentasi **setiap request**: header, parameter, body, contoh cURL, response sukses, dan response error. Total **34 endpoint**.
 
 ## Daftar Isi
 
-1. [Informasi Umum](#1-informasi-umum)
-2. [Autentikasi](#2-autentikasi)
-3. [Format Response & Kode Status](#3-format-response--kode-status)
-4. [Auth](#4-auth)
-5. [Access Token](#5-access-token)
-6. [HMAC Key](#6-hmac-key)
-7. [Users (Admin)](#7-users-admin)
-8. [Ban, Aktivasi & Force Reset (Admin)](#8-ban-aktivasi--force-reset-admin)
-9. [Grup & Permission (Admin)](#9-grup--permission-admin)
-10. [Permission yang Dibutuhkan](#10-permission-yang-dibutuhkan)
-11. [Catatan Penting](#11-catatan-penting)
+- [1. Informasi Umum](#1-informasi-umum)
+- [2. Autentikasi](#2-autentikasi)
+- [3. Format Response & Kode Status](#3-format-response--kode-status)
+- [4. Auth](#4-auth)
+  - [POST /auth/register](#41-post-authregister--registrasi) — Registrasi
+  - [POST /auth/login](#42-post-authlogin--login) — Login
+  - [GET /auth/me](#43-get-authme--profil-saya) — Profil Saya
+  - [POST /auth/logout](#44-post-authlogout--logout) — Logout
+  - [POST /auth/change-password](#45-post-authchange-password--ganti-password) — Ganti Password
+- [5. Access Token](#5-access-token)
+  - [GET /tokens](#51-get-tokens--daftar-access-token) — Daftar Access Token
+  - [POST /tokens](#52-post-tokens--buat-access-token) — Buat Access Token
+  - [PATCH /tokens/{id}/expiration](#53-patch-tokensidexpiration--ubah-kedaluwarsa-token) — Ubah Kedaluwarsa Token
+  - [DELETE /tokens/{id}](#54-delete-tokensid--cabut-satu-access-token) — Cabut Satu Access Token
+  - [DELETE /tokens](#55-delete-tokens--cabut-semua-access-token) — Cabut Semua Access Token
+- [6. HMAC Key](#6-hmac-key)
+  - [GET /hmac-keys](#61-get-hmac-keys--daftar-hmac-key) — Daftar HMAC Key
+  - [POST /hmac-keys](#62-post-hmac-keys--buat-hmac-key) — Buat HMAC Key
+  - [DELETE /hmac-keys/{key}](#63-delete-hmac-keyskey--cabut-satu-hmac-key) — Cabut Satu HMAC Key
+  - [DELETE /hmac-keys](#64-delete-hmac-keys--cabut-semua-hmac-key) — Cabut Semua HMAC Key
+- [7. Users](#7-users)
+  - [GET /users](#71-get-users--daftar-user) — Daftar User
+  - [GET /users/{id}](#72-get-usersid--detail-user) — Detail User
+  - [POST /users](#73-post-users--buat-user) — Buat User
+  - [PATCH /users/{id}](#74-patch-usersid--ubah-user) — Ubah User
+  - [DELETE /users/{id}](#75-delete-usersid--hapus-user) — Hapus User
+- [8. Ban, Aktivasi & Force Reset](#8-ban-aktivasi--force-reset)
+  - [POST /users/{id}/ban](#81-post-usersidban--ban-user) — Ban User
+  - [DELETE /users/{id}/ban](#82-delete-usersidban--unban-user) — Unban User
+  - [POST /users/{id}/activate](#83-post-usersidactivate--aktifkan-user) — Aktifkan User
+  - [POST /users/{id}/deactivate](#84-post-usersiddeactivate--nonaktifkan-user) — Nonaktifkan User
+  - [POST /users/{id}/force-reset](#85-post-usersidforce-reset--paksa-reset-password-satu-user) — Paksa Reset Password (Satu User)
+  - [DELETE /users/{id}/force-reset](#86-delete-usersidforce-reset--batalkan-paksa-reset-password) — Batalkan Paksa Reset Password
+  - [POST /users/force-reset](#87-post-usersforce-reset--paksa-reset-password-beberapa-user) — Paksa Reset Password (Beberapa User)
+  - [POST /users/force-reset-all](#88-post-usersforce-reset-all--paksa-reset-password-semua-user) — Paksa Reset Password (Semua User)
+- [9. Grup & Permission](#9-grup--permission)
+  - [GET /users/{id}/groups](#91-get-usersidgroups--daftar-grup-user) — Daftar Grup User
+  - [POST /users/{id}/groups](#92-post-usersidgroups--tambah-grup) — Tambah Grup
+  - [PUT /users/{id}/groups](#93-put-usersidgroups--sinkronisasi-grup) — Sinkronisasi Grup
+  - [DELETE /users/{id}/groups/{group}](#94-delete-usersidgroupsgroup--hapus-grup) — Hapus Grup
+  - [GET /users/{id}/permissions](#95-get-usersidpermissions--daftar-permission-langsung) — Daftar Permission Langsung
+  - [PUT /users/{id}/permissions](#96-put-usersidpermissions--sinkronisasi-permission) — Sinkronisasi Permission
+  - [POST /users/{id}/permissions/check](#97-post-usersidpermissionscheck--cek-permission) — Cek Permission
+- [10. Permission yang Dibutuhkan](#10-permission-yang-dibutuhkan)
+- [11. Catatan Penting](#11-catatan-penting)
 
 ---
 
@@ -24,177 +58,84 @@ Dokumentasi endpoint, request, dan response untuk API manajemen user, autentikas
 |---|---|
 | Base URL | `http://localhost:8080/api` |
 | Format | JSON |
-| Header wajib | `Content-Type: application/json`, `Accept: application/json` |
+| Header standar | `Accept: application/json`, dan `Content-Type: application/json` untuk request ber-body |
 | Autentikasi | `Authorization: Bearer <token>` |
-| Zona waktu | Mengikuti konfigurasi server |
 
-### Ringkasan Endpoint
-
-| Method | Path | Akses | Deskripsi |
-|---|---|---|---|
-| POST | `/auth/register` | Publik | Registrasi user baru |
-| POST | `/auth/login` | Publik | Login, mendapatkan access token |
-| GET | `/auth/me` | Token | Profil user saat ini |
-| POST | `/auth/logout` | Token | Cabut token yang sedang dipakai |
-| POST | `/auth/change-password` | Token | Ganti password |
-| GET | `/tokens` | Token | Daftar access token milik sendiri |
-| POST | `/tokens` | Token | Buat access token |
-| DELETE | `/tokens` | Token | Cabut semua access token |
-| PATCH | `/tokens/{id}/expiration` | Token | Ubah/hapus kedaluwarsa token |
-| DELETE | `/tokens/{id}` | Token | Cabut satu access token |
-| GET | `/hmac-keys` | Token | Daftar HMAC key |
-| POST | `/hmac-keys` | Token | Buat HMAC key |
-| DELETE | `/hmac-keys` | Token | Cabut semua HMAC key |
-| DELETE | `/hmac-keys/{key}` | Token | Cabut satu HMAC key |
-| GET | `/users` | `users.read` | Daftar user (paginasi) |
-| POST | `/users` | `users.create` | Buat user |
-| GET | `/users/{id}` | `users.read` | Detail user |
-| PUT/PATCH | `/users/{id}` | `users.edit` | Ubah user |
-| DELETE | `/users/{id}` | `users.delete` | Hapus user |
-| POST | `/users/{id}/ban` | `users.ban` | Ban user |
-| DELETE | `/users/{id}/ban` | `users.ban` | Unban user |
-| POST | `/users/{id}/activate` | `users.edit` | Aktifkan user |
-| POST | `/users/{id}/deactivate` | `users.edit` | Nonaktifkan user |
-| POST | `/users/{id}/force-reset` | `users.edit` | Paksa reset password |
-| DELETE | `/users/{id}/force-reset` | `users.edit` | Batalkan paksa reset |
-| POST | `/users/force-reset` | `users.edit` | Paksa reset beberapa user |
-| POST | `/users/force-reset-all` | grup `superadmin` | Paksa reset semua user |
-| GET | `/users/{id}/groups` | `users.read` | Daftar grup user |
-| POST | `/users/{id}/groups` | `users.manage-admins` | Tambah grup |
-| PUT | `/users/{id}/groups` | `users.manage-admins` | Sinkronisasi grup |
-| DELETE | `/users/{id}/groups/{group}` | `users.manage-admins` | Hapus grup |
-| GET | `/users/{id}/permissions` | `users.read` | Permission level user |
-| PUT | `/users/{id}/permissions` | `users.manage-admins` | Sinkronisasi permission |
-| POST | `/users/{id}/permissions/check` | `users.read` | Cek apakah user punya permission |
-
----
+Keterangan kolom **Akses**: *Publik* = tanpa token; *Token* = user yang login; *Admin* = grup `admin`/`superadmin` plus permission yang disebut; *Superadmin* = grup `superadmin`.
 
 ## 2. Autentikasi
 
-### 2.1 Bearer Token (utama)
-
-Dapatkan token lewat `POST /auth/login`, lalu sertakan di setiap request:
+**Bearer Token** — dapatkan lewat `POST /auth/login`, lalu kirim di setiap request:
 
 ```http
 Authorization: Bearer 5f4c2a9e7b...
 ```
 
-Token mentah hanya ditampilkan **sekali** saat dibuat. Server hanya menyimpan hash (SHA-256).
+Token mentah hanya tampil **sekali** saat dibuat; server hanya menyimpan hash (SHA-256).
 
-### 2.2 HMAC-SHA256 (opsional)
-
-Bila Anda memasang filter `hmac` pada rute tertentu, request ditandatangani dengan shared secret:
+**HMAC-SHA256 (opsional)** — bila filter `hmac` dipasang pada rute tertentu:
 
 ```http
 Authorization: HMAC-SHA256 <key>:<hmac-sha256-dari-body-request>
 ```
 
-Contoh pembuatan signature (PHP):
-
 ```php
 $signature = hash_hmac('sha256', $requestBody, $secretKey);
-header("Authorization: HMAC-SHA256 {$key}:{$signature}");
 ```
 
-Key dan secret key dibuat lewat [`POST /hmac-keys`](#62-buat-hmac-key).
-
-### 2.3 Force Password Reset
-
-Jika akun ditandai wajib reset password, semua endpoint **kecuali** `/auth/me`, `/auth/logout`, dan `/auth/change-password` akan menolak request:
-
-```http
-HTTP/1.1 403 Forbidden
-```
-```json
-{
-  "status": 403,
-  "code": "PASSWORD_RESET_REQUIRED",
-  "messages": {
-    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
-  }
-}
-```
-
----
+**Force password reset** — jika akun wajib reset password, semua endpoint **kecuali** `/auth/me`, `/auth/logout`, dan `/auth/change-password` membalas `403` dengan `code: PASSWORD_RESET_REQUIRED` (contoh tertera di tiap endpoint terkait).
 
 ## 3. Format Response & Kode Status
 
-### 3.1 Response Sukses
-
-Bentuk response sukses bervariasi per endpoint (lihat tiap endpoint). Pola umum:
+Response sukses berbeda per endpoint (lihat masing-masing). Semua error dari controller memakai format:
 
 ```json
-{ "data": { } }
+{ "status": 404, "code": 404, "messages": { "error": "User 99 tidak ditemukan." } }
 ```
 
-Response daftar dengan paginasi:
+Error validasi (`400`) berisi pesan per field di `messages`.
 
-```json
-{
-  "data": [ ],
-  "meta":  { "page": 1, "perPage": 10, "total": 1, "totalPages": 1 },
-  "links": { "self": "...", "first": "...", "last": "...", "next": null, "previous": null }
-}
-```
-
-### 3.2 Response Error
-
-Semua error dari controller memakai format `fail*()` bawaan CodeIgniter:
-
-```json
-{
-  "status": 404,
-  "code": 404,
-  "messages": {
-    "error": "User 99 tidak ditemukan."
-  }
-}
-```
-
-Error validasi (`400`) berisi pesan per field:
-
-```json
-{
-  "status": 400,
-  "code": 400,
-  "messages": {
-    "email": "The email field must contain a valid email address.",
-    "password": "The password field must be at least 8 characters in length."
-  }
-}
-```
-
-### 3.3 Kode Status HTTP
-
-| Kode | Arti | Dipakai saat |
-|---|---|---|
-| 200 | OK | Request berhasil / resource dihapus |
-| 201 | Created | Resource berhasil dibuat |
-| 204 | No Content | Berhasil, tanpa body (logout, cabut semua token) |
-| 400 | Bad Request | Validasi gagal |
-| 401 | Unauthorized | Token tidak ada/tidak valid, atau kredensial salah |
-| 403 | Forbidden | Akun diban/belum aktif, tidak punya izin, atau wajib reset password |
-| 404 | Not Found | Resource tidak ditemukan |
-| 429 | Too Many Requests | Terkena rate limit (`auth-rates`) |
+| Kode | Arti |
+|---|---|
+| 200 | OK |
+| 201 | Created |
+| 204 | No Content (tanpa body) |
+| 400 | Validasi gagal |
+| 401 | Token tidak ada / tidak valid / kredensial salah |
+| 403 | Dilarang: diban, belum aktif, tidak punya izin, atau wajib reset password |
+| 404 | Tidak ditemukan |
+| 429 | Terkena rate limit |
 
 ---
-
 ## 4. Auth
 
-### 4.1 Registrasi
+### 4.1 POST /auth/register — Registrasi
 
-`POST /auth/register` — Publik (dibatasi rate limit)
+Mendaftarkan user baru dan langsung mengembalikan access token. Hanya aktif jika `Auth::$allowRegistration = true`.
 
-Aktif hanya jika `Auth::$allowRegistration = true`; jika tidak, mengembalikan `403`.
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/auth/register` |
+| **Akses** | Publik |
 
-**Body**
+**Header**
 
-| Field | Tipe | Wajib | Aturan |
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
 |---|---|---|---|
 | `username` | string | Tidak | 3–30 karakter, unik |
 | `email` | string | Ya | Email valid, unik |
 | `password` | string | Ya | Minimal 8 karakter |
-| `device_name` | string | Tidak | Nama token, default `default` |
+| `device_name` | string | Tidak | Nama token (default `default`) |
+
+**Contoh Body**
 
 ```json
 {
@@ -205,45 +146,120 @@ Aktif hanya jika `Auth::$allowRegistration = true`; jika tidak, mengembalikan `4
 }
 ```
 
-**Response `201 Created`**
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/auth/register" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "budi", "email": "budi@example.com", "password": "rahasia123", "device_name": "web"}'
+```
+
+**Response Sukses — `201 Created`**
 
 ```json
 {
   "user": {
-    "id": 2,
+    "id": 5,
     "username": "budi",
     "email": "budi@example.com",
     "active": true,
     "banned": false,
     "requires_password_reset": false,
-    "groups": ["user"],
+    "groups": [
+      "user"
+    ],
     "created_at": "2026-10-25 06:00:00"
   },
   "token": "5f4c2a9e7b1d..."
 }
 ```
 
-**Error:** `400` validasi, `403` registrasi dinonaktifkan.
+**Error — `400` Validasi gagal**
+
+```json
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "email": "This email is already registered."
+  }
+}
+```
+
+**Error — `403` Registrasi dinonaktifkan**
+
+```json
+{
+  "status": 403,
+  "code": 403,
+  "messages": {
+    "error": "Registrasi dinonaktifkan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `429` — terkena rate limit `auth-rates`.
 
 ---
 
-### 4.2 Login
+### 4.2 POST /auth/login — Login
 
-`POST /auth/login` — Publik (dibatasi rate limit)
+Memvalidasi email dan password lalu menerbitkan access token baru.
 
-**Body**
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/auth/login` |
+| **Akses** | Publik |
 
-| Field | Tipe | Wajib |
+**Header**
+
+| Header | Nilai | Wajib |
 |---|---|---|
-| `email` | string | Ya |
-| `password` | string | Ya |
-| `device_name` | string | Tidak (default `api-login`) |
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `email` | string | Ya | Email valid |
+| `password` | string | Ya | Password akun |
+| `device_name` | string | Tidak | Nama token (default `api-login`) |
+
+**Contoh Body**
 
 ```json
-{ "email": "admin@example.com", "password": "secret123", "device_name": "web" }
+{
+  "email": "admin@example.com",
+  "password": "secret123",
+  "device_name": "web"
+}
 ```
 
-**Response `200 OK`**
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/auth/login" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "secret123", "device_name": "web"}'
+```
+
+**Response Sukses — `200 OK`**
 
 ```json
 {
@@ -254,81 +270,213 @@ Aktif hanya jika `Auth::$allowRegistration = true`; jika tidak, mengembalikan `4
     "active": true,
     "banned": false,
     "requires_password_reset": false,
-    "groups": ["admin"],
-    "created_at": "2026-10-25 05:14:23"
+    "groups": [
+      "admin"
+    ],
+    "created_at": "2026-10-25 06:00:00"
   },
   "token": "5f4c2a9e7b1d...",
   "requires_password_reset": false
 }
 ```
 
-Jika `requires_password_reset` bernilai `true`, arahkan user ke halaman ganti password.
+**Error — `400` Validasi gagal**
 
-**Error**
+```json
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "email": "The email field must contain a valid email address."
+  }
+}
+```
 
-| Kode | Penyebab |
-|---|---|
-| 400 | Field kosong / email tidak valid |
-| 401 | Email atau password salah |
-| 403 | `Akun dibanned: <alasan>` atau `Akun belum diaktifkan.` |
-| 429 | Terlalu banyak percobaan |
+**Error — `401` Kredensial salah**
+
+```json
+{
+  "status": 401,
+  "code": 401,
+  "messages": {
+    "error": "Email atau password tidak cocok."
+  }
+}
+```
+
+**Error — `403` Akun diban**
+
+```json
+{
+  "status": 403,
+  "code": 403,
+  "messages": {
+    "error": "Akun dibanned: Melanggar ToS"
+  }
+}
+```
+
+**Error — `403` Belum aktif**
+
+```json
+{
+  "status": 403,
+  "code": 403,
+  "messages": {
+    "error": "Akun belum diaktifkan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `429` — terkena rate limit `auth-rates`.
 
 ---
 
-### 4.3 Profil Saya
+### 4.3 GET /auth/me — Profil Saya
 
-`GET /auth/me` — Token
+Mengambil data user pemilik token.
 
-**Response `200 OK`**
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `http://localhost:8080/api/auth/me` |
+| **Akses** | Token |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Contoh Request**
+
+```bash
+curl -X GET "http://localhost:8080/api/auth/me" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
 
 ```json
 {
   "data": {
     "id": 1,
     "username": "admin",
-    "email": "admin@example.com",
+    "email": "budi@example.com",
     "active": true,
     "banned": false,
     "requires_password_reset": false,
-    "groups": ["admin"],
-    "created_at": "2026-10-25 05:14:23",
+    "groups": [
+      "admin"
+    ],
+    "created_at": "2026-10-25 06:00:00",
     "ban_message": null,
-    "user_permissions": ["beta.access"]
+    "user_permissions": [
+      "beta.access"
+    ]
   }
 }
 ```
 
-`user_permissions` hanya berisi permission yang diberikan langsung ke user (bukan dari grup).
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
 
 ---
 
-### 4.4 Logout
+### 4.4 POST /auth/logout — Logout
 
-`POST /auth/logout` — Token
+Mencabut token yang dipakai pada request ini.
 
-Mencabut token yang sedang dipakai pada request ini.
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/auth/logout` |
+| **Akses** | Token |
 
-**Response `204 No Content`** — tanpa body.
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Body:** tidak ada.
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/auth/logout" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `204 No Content`**
+
+Tanpa body.
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
 
 ---
 
-### 4.5 Ganti Password
+### 4.5 POST /auth/change-password — Ganti Password
 
-`POST /auth/change-password` — Token (tetap bisa diakses saat wajib reset)
+Mengganti password. Semua token lama dicabut dan token baru diterbitkan. Flag force reset dihapus. Tetap bisa diakses saat akun wajib reset password.
 
-**Body**
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/auth/change-password` |
+| **Akses** | Token |
 
-| Field | Tipe | Wajib | Aturan |
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
 |---|---|---|---|
-| `current_password` | string | Ya | Harus cocok dengan password saat ini |
+| `current_password` | string | Ya | Password saat ini |
 | `new_password` | string | Ya | 8–255 karakter, berbeda dari password lama |
 | `device_name` | string | Tidak | Nama token baru |
 
+**Contoh Body**
+
 ```json
-{ "current_password": "secret123", "new_password": "passwordBaru456" }
+{
+  "current_password": "secret123",
+  "new_password": "passwordBaru456"
+}
 ```
 
-**Response `200 OK`**
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/auth/change-password" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"current_password": "secret123", "new_password": "passwordBaru456"}'
+```
+
+**Response Sukses — `200 OK`**
 
 ```json
 {
@@ -337,33 +485,62 @@ Mencabut token yang sedang dipakai pada request ini.
 }
 ```
 
-Semua token lama dicabut. Simpan `token` yang baru. Flag *force reset* ikut dihapus.
+**Error — `400` Validasi gagal**
 
-**Error:** `400` validasi, `401` `Password saat ini salah.`
+```json
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "new_password": "The new_password field must differ from the current_password field."
+  }
+}
+```
+
+**Error — `401` Password salah**
+
+```json
+{
+  "status": 401,
+  "code": 401,
+  "messages": {
+    "error": "Password saat ini salah."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
 
 ---
 
 ## 5. Access Token
 
-Semua endpoint di bagian ini membutuhkan `Authorization: Bearer <token>` dan hanya mengelola token **milik user yang sedang login**.
+### 5.1 GET /tokens — Daftar Access Token
 
-### Objek Token
+Daftar access token milik user yang login.
 
-| Field | Tipe | Keterangan |
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `http://localhost:8080/api/tokens` |
+| **Akses** | Token |
+
+**Header**
+
+| Header | Nilai | Wajib |
 |---|---|---|
-| `id` | integer | ID token |
-| `name` | string | Nama token |
-| `scopes` | array | Daftar scope, default `["*"]` |
-| `key` | null | Selalu `null` untuk access token |
-| `last_used_at` | string\|null | Terakhir dipakai |
-| `expires_at` | string\|null | Tanggal kedaluwarsa (`null` = tidak ada) |
-| `created_at` | string | Dibuat pada |
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
 
-### 5.1 Daftar Token
+**Contoh Request**
 
-`GET /tokens`
+```bash
+curl -X GET "http://localhost:8080/api/tokens" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
 
-**Response `200 OK`**
+**Response Sukses — `200 OK`**
 
 ```json
 {
@@ -371,42 +548,92 @@ Semua endpoint di bagian ini membutuhkan `Authorization: Bearer <token>` dan han
     {
       "id": 3,
       "name": "Work Laptop",
-      "scopes": ["*"],
+      "scopes": [
+        "*"
+      ],
       "key": null,
-      "last_used_at": "2026-10-25 06:10:00",
+      "last_used_at": null,
       "expires_at": null,
-      "created_at": "2026-10-25 05:20:00"
+      "created_at": "2026-10-25 06:15:00"
     }
   ]
 }
 ```
 
-### 5.2 Buat Token
+**Error — `403` Wajib ganti password**
 
-`POST /tokens`
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
+
+---
+
+### 5.2 POST /tokens — Buat Access Token
+
+Membuat access token baru dengan scope dan kedaluwarsa opsional.
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/tokens` |
+| **Akses** | Token |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Body (JSON)**
 
 | Field | Tipe | Wajib | Keterangan |
 |---|---|---|---|
 | `name` | string | Ya | Maks. 255 karakter |
-| `scopes` | array | Tidak | Default `["*"]` |
-| `expires_at` | string\|null | Tidak | Contoh `2026-12-31 23:59:59` atau `2026-12-31T23:59` |
+| `scopes` | array<string> | Tidak | Default `["*"]`; tidak bisa diubah kemudian |
+| `expires_at` | string|null | Tidak | Mis. `2026-12-31 23:59:59` atau `2026-12-31T23:59` |
+
+**Contoh Body**
 
 ```json
 {
   "name": "Mobile App",
-  "scopes": ["posts.manage", "forums.manage"],
+  "scopes": [
+    "posts.manage"
+  ],
   "expires_at": "2026-12-31 23:59:59"
 }
 ```
 
-**Response `201 Created`**
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/tokens" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Mobile App", "scopes": ["posts.manage"], "expires_at": "2026-12-31 23:59:59"}'
+```
+
+**Response Sukses — `201 Created`**
 
 ```json
 {
   "data": {
     "id": 4,
     "name": "Mobile App",
-    "scopes": ["posts.manage", "forums.manage"],
+    "scopes": [
+      "posts.manage"
+    ],
     "key": null,
     "last_used_at": null,
     "expires_at": "2026-12-31 23:59:59",
@@ -416,53 +643,268 @@ Semua endpoint di bagian ini membutuhkan `Authorization: Bearer <token>` dan han
 }
 ```
 
-> `token` hanya muncul sekali. Scope tidak bisa diubah setelah token dibuat.
-
-### 5.3 Ubah Kedaluwarsa
-
-`PATCH /tokens/{id}/expiration`
+**Error — `400` Validasi gagal**
 
 ```json
-{ "expires_at": "2027-01-15 00:00:00" }
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "name": "The name field is required."
+  }
+}
 ```
 
-Kirim `{ "expires_at": null }` untuk menghapus kedaluwarsa.
-
-**Response `200 OK`** — `{ "data": { ...objek token terbaru... } }`
-
-**Error:** `404` `Token tidak ditemukan.`
-
-### 5.4 Cabut Satu Token
-
-`DELETE /tokens/{id}`
-
-**Response `200 OK`**
+**Error — `403` Wajib ganti password**
 
 ```json
-{ "id": 4 }
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
 ```
 
-**Error:** `404` `Token tidak ditemukan.`
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
 
-### 5.5 Cabut Semua Token
+---
 
-`DELETE /tokens`
+### 5.3 PATCH /tokens/{id}/expiration — Ubah Kedaluwarsa Token
 
-**Response `204 No Content`**
+Mengubah tanggal kedaluwarsa token. Kirim `null` untuk menghapusnya.
 
-> Token yang sedang dipakai ikut dicabut, sehingga request berikutnya akan `401`.
+| | |
+|---|---|
+| **Method** | `PATCH` |
+| **URL** | `http://localhost:8080/api/tokens/{id}/expiration` |
+| **Akses** | Token |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID token |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `expires_at` | string|null | Ya | Tanggal baru, atau `null` untuk menghapus |
+
+**Contoh Body**
+
+```json
+{
+  "expires_at": "2027-01-15 00:00:00"
+}
+```
+
+**Contoh Request**
+
+```bash
+curl -X PATCH "http://localhost:8080/api/tokens/4/expiration" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"expires_at": "2027-01-15 00:00:00"}'
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": {
+    "id": 4,
+    "name": "Mobile App",
+    "scopes": [
+      "posts.manage"
+    ],
+    "key": null,
+    "last_used_at": null,
+    "expires_at": "2027-01-15 00:00:00",
+    "created_at": "2026-10-25 06:15:00"
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "Token tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
+
+---
+
+### 5.4 DELETE /tokens/{id} — Cabut Satu Access Token
+
+Mencabut (menghapus) satu token.
+
+| | |
+|---|---|
+| **Method** | `DELETE` |
+| **URL** | `http://localhost:8080/api/tokens/{id}` |
+| **Akses** | Token |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID token |
+
+**Contoh Request**
+
+```bash
+curl -X DELETE "http://localhost:8080/api/tokens/4" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "id": 4
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "Token tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
+
+---
+
+### 5.5 DELETE /tokens — Cabut Semua Access Token
+
+Mencabut semua token user, termasuk token yang sedang dipakai.
+
+| | |
+|---|---|
+| **Method** | `DELETE` |
+| **URL** | `http://localhost:8080/api/tokens` |
+| **Akses** | Token |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Contoh Request**
+
+```bash
+curl -X DELETE "http://localhost:8080/api/tokens" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `204 No Content`**
+
+Tanpa body.
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
 
 ---
 
 ## 6. HMAC Key
 
-Struktur sama dengan access token, tetapi menghasilkan sepasang **key** (publik) dan **secret key** (rahasia, dipakai untuk menandatangani request). `key` selalu ditampilkan di daftar, sedangkan `secret_key` hanya sekali saat dibuat.
+### 6.1 GET /hmac-keys — Daftar HMAC Key
 
-> Wajib mengisi `authtoken.hmacEncryptionKeys` di `.env` sebelum memakai HMAC.
+Daftar HMAC key milik user. `key` selalu tampil; secret key tidak.
 
-### 6.1 Daftar HMAC Key
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `http://localhost:8080/api/hmac-keys` |
+| **Akses** | Token |
 
-`GET /hmac-keys`
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Contoh Request**
+
+```bash
+curl -X GET "http://localhost:8080/api/hmac-keys" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
 
 ```json
 {
@@ -470,119 +912,358 @@ Struktur sama dengan access token, tetapi menghasilkan sepasang **key** (publik)
     {
       "id": 7,
       "name": "Partner API",
-      "scopes": ["*"],
+      "scopes": [
+        "*"
+      ],
       "key": "a6c460151b4cabbe1c1d73e08915ce8e",
       "last_used_at": null,
       "expires_at": null,
-      "created_at": "2026-10-25 06:20:00"
+      "created_at": "2026-10-25 06:15:00"
     }
   ]
 }
 ```
 
-### 6.2 Buat HMAC Key
+**Error — `403` Wajib ganti password**
 
-`POST /hmac-keys` — Body sama dengan [5.2](#52-buat-token).
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
 
-**Response `201 Created`**
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
+
+---
+
+### 6.2 POST /hmac-keys — Buat HMAC Key
+
+Membuat sepasang key dan secret key. Pastikan `authtoken.hmacEncryptionKeys` sudah diisi di `.env`.
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/hmac-keys` |
+| **Akses** | Token |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `name` | string | Ya | Maks. 255 karakter |
+| `scopes` | array<string> | Tidak | Default `["*"]` |
+| `expires_at` | string|null | Tidak | Tanggal kedaluwarsa |
+
+**Contoh Body**
+
+```json
+{
+  "name": "Partner API",
+  "scopes": [
+    "*"
+  ]
+}
+```
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/hmac-keys" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Partner API", "scopes": ["*"]}'
+```
+
+**Response Sukses — `201 Created`**
 
 ```json
 {
   "data": {
     "id": 7,
     "name": "Partner API",
-    "scopes": ["*"],
+    "scopes": [
+      "*"
+    ],
     "key": "a6c460151b4cabbe1c1d73e08915ce8e",
     "last_used_at": null,
     "expires_at": null,
-    "created_at": "2026-10-25 06:20:00"
+    "created_at": "2026-10-25 06:15:00"
   },
   "key": "a6c460151b4cabbe1c1d73e08915ce8e",
   "secret_key": "56c85232f0e5b55c05015476cd132c8d"
 }
 ```
 
-### 6.3 Cabut Satu HMAC Key
-
-`DELETE /hmac-keys/{key}` — `{key}` adalah nilai field `key`, bukan `id`.
-
-**Response `200 OK`**
+**Error — `400` Validasi gagal**
 
 ```json
-{ "key": "a6c460151b4cabbe1c1d73e08915ce8e" }
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "name": "The name field is required."
+  }
+}
 ```
 
-**Error:** `404` `HMAC key tidak ditemukan.`
+**Error — `403` Wajib ganti password**
 
-### 6.4 Cabut Semua HMAC Key
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
 
-`DELETE /hmac-keys` → **`204 No Content`**
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
 
 ---
 
-## 7. Users (Admin)
+### 6.3 DELETE /hmac-keys/{key} — Cabut Satu HMAC Key
 
-Membutuhkan grup `admin` atau `superadmin` **dan** permission pada tiap endpoint (lihat [bagian 10](#10-permission-yang-dibutuhkan)).
+Mencabut satu HMAC key. Gunakan nilai `key`, bukan `id`.
 
-### Objek User
+| | |
+|---|---|
+| **Method** | `DELETE` |
+| **URL** | `http://localhost:8080/api/hmac-keys/{key}` |
+| **Akses** | Token |
 
-| Field | Tipe | Keterangan |
+**Header**
+
+| Header | Nilai | Wajib |
 |---|---|---|
-| `id` | integer | ID user |
-| `username` | string\|null | Username |
-| `email` | string | Email |
-| `active` | boolean | Status aktivasi |
-| `banned` | boolean | Status ban |
-| `requires_password_reset` | boolean | Wajib ganti password |
-| `groups` | array | Grup user |
-| `created_at` | string | Dibuat pada |
-| `ban_message` | string\|null | *Hanya di detail* — alasan ban |
-| `user_permissions` | array | *Hanya di detail* — permission langsung |
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
 
-### 7.1 Daftar User
+**Path Parameter**
 
-`GET /users` — `users.read`
-
-**Query**
-
-| Parameter | Default | Keterangan |
+| Nama | Tipe | Keterangan |
 |---|---|---|
-| `page` | 1 | Nomor halaman |
-| `per_page` | 20 | 1–100 |
-| `q` | — | Cari berdasarkan username (LIKE) |
+| `key` | string | Nilai `key` HMAC |
 
-**Response `200 OK`**
+**Contoh Request**
+
+```bash
+curl -X DELETE "http://localhost:8080/api/hmac-keys/a6c460151b4cabbe1c1d73e08915ce8e" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "key": "a6c460151b4cabbe1c1d73e08915ce8e"
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "HMAC key tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
+
+---
+
+### 6.4 DELETE /hmac-keys — Cabut Semua HMAC Key
+
+Mencabut semua HMAC key milik user.
+
+| | |
+|---|---|
+| **Method** | `DELETE` |
+| **URL** | `http://localhost:8080/api/hmac-keys` |
+| **Akses** | Token |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Contoh Request**
+
+```bash
+curl -X DELETE "http://localhost:8080/api/hmac-keys" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `204 No Content`**
+
+Tanpa body.
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas).
+
+---
+
+## 7. Users
+
+### 7.1 GET /users — Daftar User
+
+Daftar user dengan paginasi. Relasi identitas, grup, dan permission di-preload.
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `http://localhost:8080/api/users` |
+| **Akses** | Admin (permission `users.read`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Query Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `page` | integer | Nomor halaman (default 1) |
+| `per_page` | integer | 1–100 (default 20) |
+| `q` | string | Cari username (LIKE) |
+
+**Contoh Request**
+
+```bash
+curl -X GET "http://localhost:8080/api/users?page=1&per_page=10&q=budi" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
 
 ```json
 {
   "data": [
     {
-      "id": 1,
-      "username": "abdullukmana",
-      "email": "abdullukmana17@gmail.com",
+      "id": 5,
+      "username": "budi",
+      "email": "budi@example.com",
       "active": true,
       "banned": false,
       "requires_password_reset": false,
-      "groups": ["admin"],
-      "created_at": "2026-10-25 05:14:23"
+      "groups": [
+        "user"
+      ],
+      "created_at": "2026-10-25 06:00:00"
     }
   ],
-  "meta": { "page": 1, "perPage": 10, "total": 1, "totalPages": 1 },
+  "meta": {
+    "page": 1,
+    "perPage": 10,
+    "total": 1,
+    "totalPages": 1
+  },
   "links": {
-    "self": "http://localhost:8080/api/users?page=1&per_page=10&q=",
-    "first": "http://localhost:8080/api/users?page=1&per_page=10&q=",
-    "last": "http://localhost:8080/api/users?page=1&per_page=10&q=",
+    "self": "http://localhost:8080/api/users?page=1&per_page=10&q=budi",
+    "first": "http://localhost:8080/api/users?page=1&per_page=10&q=budi",
+    "last": "http://localhost:8080/api/users?page=1&per_page=10&q=budi",
     "next": null,
     "previous": null
   }
 }
 ```
 
-`data` selalu berupa **array**. Pada halaman pertama `previous` bernilai `null`; pada halaman terakhir `next` bernilai `null`.
+**Error — `403` Wajib ganti password**
 
-### 7.2 Detail User
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
 
-`GET /users/{id}` — `users.read`
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 7.2 GET /users/{id} — Detail User
+
+Detail satu user, termasuk alasan ban dan permission langsung.
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `http://localhost:8080/api/users/{id}` |
+| **Akses** | Admin (permission `users.read`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Contoh Request**
+
+```bash
+curl -X GET "http://localhost:8080/api/users/5" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
 
 ```json
 {
@@ -591,28 +1272,74 @@ Membutuhkan grup `admin` atau `superadmin` **dan** permission pada tiap endpoint
     "username": "budi",
     "email": "budi@example.com",
     "active": true,
-    "banned": true,
+    "banned": false,
     "requires_password_reset": false,
-    "groups": ["user"],
+    "groups": [
+      "user"
+    ],
     "created_at": "2026-10-25 06:00:00",
-    "ban_message": "Melanggar ToS",
+    "ban_message": null,
     "user_permissions": []
   }
 }
 ```
 
-**Error:** `404` `User 5 tidak ditemukan.`
+**Error — `404` Tidak ditemukan**
 
-### 7.3 Buat User
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
 
-`POST /users` — `users.create`
+**Error — `403` Wajib ganti password**
 
-| Field | Tipe | Wajib | Aturan |
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 7.3 POST /users — Buat User
+
+Membuat user baru; otomatis masuk grup default.
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/users` |
+| **Akses** | Admin (permission `users.create`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
 |---|---|---|---|
 | `username` | string | Tidak | 3–30 karakter, unik |
 | `email` | string | Ya | Email valid, unik |
 | `password` | string | Ya | Min. 8 karakter |
-| `force_password_reset` | boolean | Tidak | Jika `true`, user wajib ganti password saat login |
+| `force_password_reset` | boolean | Tidak | `true` = wajib ganti password saat login |
+
+**Contoh Body**
 
 ```json
 {
@@ -623,267 +1350,1569 @@ Membutuhkan grup `admin` atau `superadmin` **dan** permission pada tiap endpoint
 }
 ```
 
-**Response `201 Created`** — `{ "data": { ...objek user detail... } }`. User otomatis masuk grup default (`user`).
+**Contoh Request**
 
-### 7.4 Ubah User
-
-`PUT /users/{id}` atau `PATCH /users/{id}` — `users.edit`
-
-Semua field opsional; hanya field yang dikirim yang diubah.
-
-| Field | Aturan |
-|---|---|
-| `username` | 3–30 karakter, unik (mengabaikan user ini) |
-| `email` | Email valid |
-| `password` | Min. 8 karakter |
-
-```json
-{ "username": "siti_baru", "email": "siti.baru@example.com" }
+```bash
+curl -X POST "http://localhost:8080/api/users" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "siti", "email": "siti@example.com", "password": "sementara123", "force_password_reset": true}'
 ```
 
-**Response `200 OK`** — `{ "data": { ...objek user detail... } }`
-
-**Error:** `400` validasi, `404` tidak ditemukan.
-
-### 7.5 Hapus User
-
-`DELETE /users/{id}` — `users.delete`
-
-| Query | Keterangan |
-|---|---|
-| `hard=1` | Hapus permanen. Tanpa ini, memakai *soft delete*. |
-
-**Response `200 OK`**
+**Response Sukses — `201 Created`**
 
 ```json
-{ "id": 5 }
+{
+  "data": {
+    "id": 5,
+    "username": "siti",
+    "email": "siti@example.com",
+    "active": true,
+    "banned": false,
+    "requires_password_reset": true,
+    "groups": [
+      "user"
+    ],
+    "created_at": "2026-10-25 06:00:00",
+    "ban_message": null,
+    "user_permissions": []
+  }
+}
 ```
 
-**Error:** `403` `Tidak bisa menghapus akun sendiri.`, `404` tidak ditemukan.
+**Error — `400` Validasi gagal**
+
+```json
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "email": "The email field must contain a valid email address."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
 
 ---
 
-## 8. Ban, Aktivasi & Force Reset (Admin)
+### 7.4 PATCH /users/{id} — Ubah User
 
-Semua endpoint di bagian ini mengembalikan `{ "data": { ...objek user... } }` saat sukses (`200 OK`), dan `404` bila user tidak ditemukan.
+Mengubah sebagian data user. `PUT /users/{id}` memiliki perilaku yang sama. Hanya field yang dikirim yang diubah.
 
-### 8.1 Ban User
+| | |
+|---|---|
+| **Method** | `PATCH` |
+| **URL** | `http://localhost:8080/api/users/{id}` |
+| **Akses** | Admin (permission `users.edit`) |
 
-`POST /users/{id}/ban` — `users.ban`
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `username` | string | Tidak | 3–30 karakter, unik |
+| `email` | string | Tidak | Email valid |
+| `password` | string | Tidak | Min. 8 karakter |
+
+**Contoh Body**
 
 ```json
-{ "message": "Melanggar ketentuan layanan" }
+{
+  "username": "budi_baru",
+  "email": "budi.baru@example.com"
+}
 ```
 
-`message` opsional. Semua access token user otomatis dicabut.
+**Contoh Request**
 
-**Response `200 OK`** — `data.banned = true`, `data.ban_message = "Melanggar ketentuan layanan"`.
+```bash
+curl -X PATCH "http://localhost:8080/api/users/5" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "budi_baru", "email": "budi.baru@example.com"}'
+```
 
-**Error:** `403` `Tidak bisa memblokir akun sendiri.`
-
-### 8.2 Unban User
-
-`DELETE /users/{id}/ban` — `users.ban`
-
-**Response `200 OK`** — `data.banned = false`, `data.ban_message = null`.
-
-### 8.3 Aktifkan / Nonaktifkan
-
-| Endpoint | Efek |
-|---|---|
-| `POST /users/{id}/activate` | `active = true` |
-| `POST /users/{id}/deactivate` | `active = false` dan semua token dicabut |
-
-Permission: `users.edit`.
-
-### 8.4 Paksa Reset Password (Satu User)
-
-| Endpoint | Efek |
-|---|---|
-| `POST /users/{id}/force-reset` | `requires_password_reset = true` |
-| `DELETE /users/{id}/force-reset` | `requires_password_reset = false` |
-
-Permission: `users.edit`.
-
-### 8.5 Paksa Reset Beberapa User
-
-`POST /users/force-reset` — `users.edit`
+**Response Sukses — `200 OK`**
 
 ```json
-{ "user_ids": [1, 2, 3, 4] }
+{
+  "data": {
+    "id": 5,
+    "username": "budi_baru",
+    "email": "budi.baru@example.com",
+    "active": true,
+    "banned": false,
+    "requires_password_reset": false,
+    "groups": [
+      "user"
+    ],
+    "created_at": "2026-10-25 06:00:00",
+    "ban_message": null,
+    "user_permissions": []
+  }
+}
 ```
 
-**Response `200 OK`**
+**Error — `400` Validasi gagal**
+
+```json
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "username": "The username field must contain a unique value."
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 7.5 DELETE /users/{id} — Hapus User
+
+Menghapus user. Default soft delete; gunakan `hard=1` untuk hapus permanen.
+
+| | |
+|---|---|
+| **Method** | `DELETE` |
+| **URL** | `http://localhost:8080/api/users/{id}` |
+| **Akses** | Admin (permission `users.delete`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Query Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `hard` | integer | `1` = hapus permanen |
+
+**Contoh Request**
+
+```bash
+curl -X DELETE "http://localhost:8080/api/users/5?hard=1" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "id": 5
+}
+```
+
+**Error — `403` Hapus akun sendiri**
+
+```json
+{
+  "status": 403,
+  "code": 403,
+  "messages": {
+    "error": "Tidak bisa menghapus akun sendiri."
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+## 8. Ban, Aktivasi & Force Reset
+
+### 8.1 POST /users/{id}/ban — Ban User
+
+Memblokir user dan mencabut semua token-nya.
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/users/{id}/ban` |
+| **Akses** | Admin (permission `users.ban`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `message` | string | Tidak | Alasan ban |
+
+**Contoh Body**
+
+```json
+{
+  "message": "Melanggar ketentuan layanan"
+}
+```
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/users/5/ban" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Melanggar ketentuan layanan"}'
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": {
+    "id": 5,
+    "username": "budi",
+    "email": "budi@example.com",
+    "active": true,
+    "banned": true,
+    "requires_password_reset": false,
+    "groups": [
+      "user"
+    ],
+    "created_at": "2026-10-25 06:00:00",
+    "ban_message": "Melanggar ketentuan layanan",
+    "user_permissions": []
+  }
+}
+```
+
+**Error — `403` Ban akun sendiri**
+
+```json
+{
+  "status": 403,
+  "code": 403,
+  "messages": {
+    "error": "Tidak bisa memblokir akun sendiri."
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 8.2 DELETE /users/{id}/ban — Unban User
+
+Mencabut ban user.
+
+| | |
+|---|---|
+| **Method** | `DELETE` |
+| **URL** | `http://localhost:8080/api/users/{id}/ban` |
+| **Akses** | Admin (permission `users.ban`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Contoh Request**
+
+```bash
+curl -X DELETE "http://localhost:8080/api/users/5/ban" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": {
+    "id": 5,
+    "username": "budi",
+    "email": "budi@example.com",
+    "active": true,
+    "banned": false,
+    "requires_password_reset": false,
+    "groups": [
+      "user"
+    ],
+    "created_at": "2026-10-25 06:00:00",
+    "ban_message": null,
+    "user_permissions": []
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 8.3 POST /users/{id}/activate — Aktifkan User
+
+Mengaktifkan akun user.
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/users/{id}/activate` |
+| **Akses** | Admin (permission `users.edit`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Body:** tidak ada.
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/users/5/activate" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": {
+    "id": 5,
+    "username": "budi",
+    "email": "budi@example.com",
+    "active": true,
+    "banned": false,
+    "requires_password_reset": false,
+    "groups": [
+      "user"
+    ],
+    "created_at": "2026-10-25 06:00:00"
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 8.4 POST /users/{id}/deactivate — Nonaktifkan User
+
+Menonaktifkan akun user dan mencabut semua token-nya.
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/users/{id}/deactivate` |
+| **Akses** | Admin (permission `users.edit`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Body:** tidak ada.
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/users/5/deactivate" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": {
+    "id": 5,
+    "username": "budi",
+    "email": "budi@example.com",
+    "active": false,
+    "banned": false,
+    "requires_password_reset": false,
+    "groups": [
+      "user"
+    ],
+    "created_at": "2026-10-25 06:00:00"
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 8.5 POST /users/{id}/force-reset — Paksa Reset Password (Satu User)
+
+Menandai user wajib mengganti password.
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/users/{id}/force-reset` |
+| **Akses** | Admin (permission `users.edit`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Body:** tidak ada.
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/users/5/force-reset" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": {
+    "id": 5,
+    "username": "budi",
+    "email": "budi@example.com",
+    "active": true,
+    "banned": false,
+    "requires_password_reset": true,
+    "groups": [
+      "user"
+    ],
+    "created_at": "2026-10-25 06:00:00"
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 8.6 DELETE /users/{id}/force-reset — Batalkan Paksa Reset Password
+
+Menghapus tanda wajib ganti password.
+
+| | |
+|---|---|
+| **Method** | `DELETE` |
+| **URL** | `http://localhost:8080/api/users/{id}/force-reset` |
+| **Akses** | Admin (permission `users.edit`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Contoh Request**
+
+```bash
+curl -X DELETE "http://localhost:8080/api/users/5/force-reset" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": {
+    "id": 5,
+    "username": "budi",
+    "email": "budi@example.com",
+    "active": true,
+    "banned": false,
+    "requires_password_reset": false,
+    "groups": [
+      "user"
+    ],
+    "created_at": "2026-10-25 06:00:00"
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 8.7 POST /users/force-reset — Paksa Reset Password (Beberapa User)
+
+Menandai banyak user sekaligus wajib ganti password.
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/users/force-reset` |
+| **Akses** | Admin (permission `users.edit`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `user_ids` | array<integer> | Ya | Daftar ID user, tidak boleh kosong |
+
+**Contoh Body**
+
+```json
+{
+  "user_ids": [
+    1,
+    2,
+    3,
+    4
+  ]
+}
+```
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/users/force-reset" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"user_ids": [1, 2, 3, 4]}'
+```
+
+**Response Sukses — `200 OK`**
 
 ```json
 {
   "message": "Force reset diterapkan.",
-  "user_ids": [1, 2, 3, 4]
+  "user_ids": [
+    1,
+    2,
+    3,
+    4
+  ]
 }
 ```
 
-**Error:** `400` bila `user_ids` kosong atau bukan array.
-
-### 8.6 Paksa Reset Semua User
-
-`POST /users/force-reset-all` — hanya grup `superadmin`
-
-Tanpa body.
-
-**Response `200 OK`**
+**Error — `400` Validasi gagal**
 
 ```json
-{ "message": "Force reset diterapkan ke semua user." }
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "user_ids": "user_ids wajib berupa array."
+  }
+}
 ```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
 
 ---
 
-## 9. Grup & Permission (Admin)
+### 8.8 POST /users/force-reset-all — Paksa Reset Password (Semua User)
 
-### 9.1 Daftar Grup User
+Menandai **semua** user wajib ganti password. Hanya untuk grup `superadmin`.
 
-`GET /users/{id}/groups` — `users.read`
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/users/force-reset-all` |
+| **Akses** | Superadmin |
 
-```json
-{ "data": ["admin", "beta"] }
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Body:** tidak ada.
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/users/force-reset-all" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
 ```
 
-### 9.2 Tambah Grup
-
-`POST /users/{id}/groups` — `users.manage-admins`
+**Response Sukses — `200 OK`**
 
 ```json
-{ "groups": ["beta"] }
+{
+  "message": "Force reset diterapkan ke semua user."
+}
 ```
 
-**Response `201 Created`**
+**Error — `403` Wajib ganti password**
 
 ```json
-{ "data": ["user", "beta"] }
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
 ```
 
-### 9.3 Sinkronisasi Grup
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
 
-`PUT /users/{id}/groups` — `users.manage-admins`
+---
+
+## 9. Grup & Permission
+
+### 9.1 GET /users/{id}/groups — Daftar Grup User
+
+Daftar grup milik user.
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `http://localhost:8080/api/users/{id}/groups` |
+| **Akses** | Admin (permission `users.read`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Contoh Request**
+
+```bash
+curl -X GET "http://localhost:8080/api/users/5/groups" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": [
+    "admin",
+    "beta"
+  ]
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 9.2 POST /users/{id}/groups — Tambah Grup
+
+Menambahkan satu atau lebih grup tanpa menghapus grup yang ada.
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/users/{id}/groups` |
+| **Akses** | Admin (permission `users.manage-admins`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `groups` | array<string> | Ya | Nama grup yang terdaftar di `AuthGroups` |
+
+**Contoh Body**
+
+```json
+{
+  "groups": [
+    "beta"
+  ]
+}
+```
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/users/5/groups" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"groups": ["beta"]}'
+```
+
+**Response Sukses — `201 Created`**
+
+```json
+{
+  "data": [
+    "user",
+    "beta"
+  ]
+}
+```
+
+**Error — `400` Validasi gagal**
+
+```json
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "groups": "Group 'xyz' is not a valid group."
+  }
+}
+```
+
+**Error — `403` Grup superadmin**
+
+```json
+{
+  "status": 403,
+  "code": 403,
+  "messages": {
+    "error": "Hanya superadmin yang dapat mengelola grup superadmin."
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 9.3 PUT /users/{id}/groups — Sinkronisasi Grup
 
 Mengganti **seluruh** grup user dengan daftar yang dikirim.
 
-```json
-{ "groups": ["admin", "beta"] }
-```
-
-**Response `200 OK`**
-
-```json
-{ "data": ["admin", "beta"] }
-```
-
-### 9.4 Hapus Grup
-
-`DELETE /users/{id}/groups/{group}` — `users.manage-admins`
-
-**Response `200 OK`** — `{ "data": [ ...grup tersisa... ] }`
-
-### Error Umum Grup
-
-| Kode | Penyebab |
+| | |
 |---|---|
-| 400 | `groups` bukan array, atau grup tidak terdaftar di `AuthGroups::$groups` |
-| 403 | Non-superadmin mencoba menambah/mengubah/menghapus grup `superadmin` |
-| 404 | User tidak ditemukan |
+| **Method** | `PUT` |
+| **URL** | `http://localhost:8080/api/users/{id}/groups` |
+| **Akses** | Admin (permission `users.manage-admins`) |
 
-### 9.5 Permission Langsung User
+**Header**
 
-`GET /users/{id}/permissions` — `users.read`
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
 
-```json
-{ "data": ["users.create", "beta.access"] }
-```
+**Path Parameter**
 
-Hanya permission level user, **tidak** termasuk permission dari grup.
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
 
-### 9.6 Sinkronisasi Permission
+**Body (JSON)**
 
-`PUT /users/{id}/permissions` — `users.manage-admins`
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `groups` | array<string> | Ya | Daftar grup final |
 
-```json
-{ "permissions": ["admin.access", "beta.access"] }
-```
-
-**Response `200 OK`**
-
-```json
-{ "data": ["admin.access", "beta.access"] }
-```
-
-**Error:** `400` bila `permissions` bukan array atau ada permission yang tidak terdaftar di `AuthGroups::$permissions`.
-
-### 9.7 Cek Permission
-
-`POST /users/{id}/permissions/check` — `users.read`
+**Contoh Body**
 
 ```json
-{ "permission": "users.delete" }
+{
+  "groups": [
+    "admin",
+    "beta"
+  ]
+}
 ```
 
-**Response `200 OK`**
+**Contoh Request**
+
+```bash
+curl -X PUT "http://localhost:8080/api/users/5/groups" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"groups": ["admin", "beta"]}'
+```
+
+**Response Sukses — `200 OK`**
 
 ```json
-{ "permission": "users.delete", "allowed": true }
+{
+  "data": [
+    "admin",
+    "beta"
+  ]
+}
 ```
 
-Memeriksa permission langsung dan permission dari seluruh grup user, termasuk wildcard (mis. `users.*`).
+**Error — `400` Validasi gagal**
+
+```json
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "groups": "groups wajib berupa array."
+  }
+}
+```
+
+**Error — `403` Grup superadmin**
+
+```json
+{
+  "status": 403,
+  "code": 403,
+  "messages": {
+    "error": "Hanya superadmin yang dapat mengelola grup superadmin."
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 9.4 DELETE /users/{id}/groups/{group} — Hapus Grup
+
+Menghapus satu grup dari user.
+
+| | |
+|---|---|
+| **Method** | `DELETE` |
+| **URL** | `http://localhost:8080/api/users/{id}/groups/{group}` |
+| **Akses** | Admin (permission `users.manage-admins`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+| `group` | string | Nama grup |
+
+**Contoh Request**
+
+```bash
+curl -X DELETE "http://localhost:8080/api/users/5/groups/beta" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": [
+    "user"
+  ]
+}
+```
+
+**Error — `403` Grup superadmin**
+
+```json
+{
+  "status": 403,
+  "code": 403,
+  "messages": {
+    "error": "Hanya superadmin yang dapat mengelola grup superadmin."
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 9.5 GET /users/{id}/permissions — Daftar Permission Langsung
+
+Permission yang diberikan langsung ke user (tanpa permission dari grup).
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `http://localhost:8080/api/users/{id}/permissions` |
+| **Akses** | Admin (permission `users.read`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Contoh Request**
+
+```bash
+curl -X GET "http://localhost:8080/api/users/5/permissions" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": [
+    "users.create",
+    "beta.access"
+  ]
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 9.6 PUT /users/{id}/permissions — Sinkronisasi Permission
+
+Mengganti seluruh permission langsung user.
+
+| | |
+|---|---|
+| **Method** | `PUT` |
+| **URL** | `http://localhost:8080/api/users/{id}/permissions` |
+| **Akses** | Admin (permission `users.manage-admins`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `permissions` | array<string> | Ya | Permission yang terdaftar di `AuthGroups::$permissions` |
+
+**Contoh Body**
+
+```json
+{
+  "permissions": [
+    "admin.access",
+    "beta.access"
+  ]
+}
+```
+
+**Contoh Request**
+
+```bash
+curl -X PUT "http://localhost:8080/api/users/5/permissions" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"permissions": ["admin.access", "beta.access"]}'
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "data": [
+    "admin.access",
+    "beta.access"
+  ]
+}
+```
+
+**Error — `400` Validasi gagal**
+
+```json
+{
+  "status": 400,
+  "code": 400,
+  "messages": {
+    "permissions": "Permission 'x.y' does not exist."
+  }
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
+
+---
+
+### 9.7 POST /users/{id}/permissions/check — Cek Permission
+
+Mengecek apakah user memiliki permission (langsung, dari grup, atau wildcard).
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `http://localhost:8080/api/users/{id}/permissions/check` |
+| **Akses** | Admin (permission `users.read`) |
+
+**Header**
+
+| Header | Nilai | Wajib |
+|---|---|---|
+| `Accept` | `application/json` | Ya |
+| `Content-Type` | `application/json` | Ya |
+| `Authorization` | `Bearer <token>` | Ya |
+
+**Path Parameter**
+
+| Nama | Tipe | Keterangan |
+|---|---|---|
+| `id` | integer | ID user |
+
+**Body (JSON)**
+
+| Field | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `permission` | string | Ya | Mis. `users.delete` |
+
+**Contoh Body**
+
+```json
+{
+  "permission": "users.delete"
+}
+```
+
+**Contoh Request**
+
+```bash
+curl -X POST "http://localhost:8080/api/users/5/permissions/check" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"permission": "users.delete"}'
+```
+
+**Response Sukses — `200 OK`**
+
+```json
+{
+  "permission": "users.delete",
+  "allowed": true
+}
+```
+
+**Error — `404` Tidak ditemukan**
+
+```json
+{
+  "status": 404,
+  "code": 404,
+  "messages": {
+    "error": "User 5 tidak ditemukan."
+  }
+}
+```
+
+**Error — `403` Wajib ganti password**
+
+```json
+{
+  "status": 403,
+  "code": "PASSWORD_RESET_REQUIRED",
+  "messages": {
+    "error": "Anda harus mengganti password. Gunakan POST /api/auth/change-password."
+  }
+}
+```
+
+**Error umum lainnya:** `401` — token tidak ada, salah, atau sudah kedaluwarsa (body dihasilkan filter Shield dan bisa berbeda dari format di atas); `403` — user bukan admin / tidak punya permission yang dibutuhkan (lihat catatan filter di bagian 11).
 
 ---
 
 ## 10. Permission yang Dibutuhkan
 
-Konfigurasi default pada `AuthGroups::$matrix`:
-
 | Permission | Deskripsi | `superadmin` | `admin` |
 |---|---|:---:|:---:|
-| `users.read` | Lihat daftar & detail user | ✔ | ✔ |
+| `users.read` | Lihat daftar & detail user, grup, permission | ✔ | ✔ |
 | `users.create` | Buat user | ✔ | ✔ |
 | `users.edit` | Ubah user, aktivasi, force reset | ✔ | ✔ |
 | `users.delete` | Hapus user | ✔ | ✔ |
 | `users.ban` | Ban / unban | ✔ | ✔ |
 | `users.manage-admins` | Kelola grup & permission | ✔ | ✘ |
 
-`superadmin` memperoleh semuanya melalui wildcard `users.*`. Endpoint `force-reset-all` mensyaratkan **grup** `superadmin`, bukan sekadar permission.
-
----
+`superadmin` mendapat semuanya lewat wildcard `users.*`. Endpoint `force-reset-all` mensyaratkan **grup** `superadmin`.
 
 ## 11. Catatan Penting
 
 1. **Token mentah hanya tampil sekali** (`token`, `secret_key`). Simpan segera.
-2. **Rate limiting:** rute `/auth/*` memakai filter `auth-rates` dan dapat merespons `429`.
-3. **Respons filter Shield:** filter `tokens` mengembalikan `401` bila token hilang atau tidak valid. Pada beberapa versi Shield, filter `group` dan `permission` mengalihkan (redirect `302`) alih-alih mengembalikan JSON `403`. Bila klien Anda menerima `302`, buat filter kustom yang mengembalikan JSON `403`, seperti `ApiForceResetFilter`.
-4. **Scope token:** `["*"]` memberi akses ke semua scope. Scope tidak dapat diubah setelah token dibuat.
-5. **Kedaluwarsa vs masa pakai:** `expires_at` adalah tanggal pasti berhentinya token. Terpisah dari `unusedTokenLifetime` (default 1 tahun sejak terakhir dipakai).
-6. **Soft delete:** `DELETE /users/{id}` tanpa `hard=1` hanya menandai user terhapus dan tidak menghapus datanya.
-7. **Format tanggal:** `Y-m-d H:i:s`. Untuk input `expires_at`, format ISO 8601 (`2026-12-31T23:59`) juga diterima.
-
-### Contoh cURL
-
-```bash
-# Login
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"secret123"}'
-
-# Daftar user
-curl "http://localhost:8080/api/users?page=1&per_page=10" \
-  -H "Authorization: Bearer <token>"
-
-# Ban user
-curl -X POST http://localhost:8080/api/users/5/ban \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"message":"Melanggar ToS"}'
-
-# Sinkronisasi grup
-curl -X PUT http://localhost:8080/api/users/5/groups \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"groups":["admin","beta"]}'
-```
+2. **Rate limiting:** rute `/auth/*` memakai filter `auth-rates` dan dapat membalas `429`.
+3. **Filter Shield:** `tokens` membalas `401` bila token tidak valid. Pada beberapa versi Shield, filter `group` dan `permission` melakukan redirect `302`, bukan JSON `403`. Jika klien menerima `302`, buat filter kustom yang membalas JSON `403` (contoh: `ApiForceResetFilter`). Perilaku ini perlu dicek di versi Shield Anda.
+4. **Scope token** tidak dapat diubah setelah token dibuat. `["*"]` berarti semua scope.
+5. **Kedaluwarsa vs masa pakai:** `expires_at` adalah tanggal pasti berhentinya token; terpisah dari `unusedTokenLifetime` (default 1 tahun sejak terakhir dipakai).
+6. **Soft delete:** `DELETE /users/{id}` tanpa `hard=1` hanya menandai user terhapus.
+7. **Format tanggal:** `Y-m-d H:i:s`; untuk input `expires_at`, ISO 8601 (`2026-12-31T23:59`) juga diterima.
+8. Nilai pada contoh response (ID, token, tanggal) hanya ilustrasi.
